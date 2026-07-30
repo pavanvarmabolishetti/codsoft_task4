@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Movie Recommendation System using Content-Based Filtering with TF-IDF and Cosine Similarity.">
+    <title>FlixRecs | AI Movie Recommendation System</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Main Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand" id="brand-logo">
+                <i class="fa-solid fa-film logo-icon"></i>
+                <span class="logo-text">FLIX<span class="highlight">RECS</span></span>
+            </div>
+            
+            <!-- Global Search Bar -->
+            <div class="search-wrapper">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search a movie to get recommendations..." autocomplete="off">
+                    <button type="button" id="clear-search-btn" class="hidden-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div class="autocomplete-dropdown hidden" id="suggestions-box"></div>
+            </div>
+            
+            <div class="header-actions">
+                <span class="badge">AI Engine v1.0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="app-container">
+        
+        <!-- Hero Spotlight Section -->
+        <section class="hero-section" id="hero-spotlight">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="hero-tagline"><i class="fa-solid fa-fire"></i> Featured Spotlight</span>
+                <h1 class="hero-title" id="hero-movie-title">Inception</h1>
+                <div class="hero-meta">
+                    <span class="meta-item year" id="hero-movie-year">2010</span>
+                    <span class="meta-item rating" id="hero-movie-rating"><i class="fa-solid fa-star text-gold"></i> 8.8</span>
+                    <span class="meta-item genres" id="hero-movie-genres">Sci-Fi, Action, Thriller</span>
+                </div>
+                <p class="hero-description" id="hero-movie-desc">
+                    A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a CEO.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" id="hero-rec-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Get Recommendations
+                    </button>
+                    <button class="btn btn-secondary" id="hero-details-btn">
+                        <i class="fa-solid fa-circle-info"></i> More Info
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Results & Dashboard Grid -->
+        <div class="dashboard-grid">
+            
+            <!-- Filters Sidebar -->
+            <aside class="filters-sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fa-solid fa-sliders"></i> Recommendation Filters</h3>
+                </div>
+                <div class="filter-group">
+                    <label for="genre-select">Genre</label>
+                    <select id="genre-select">
+                        <option value="">All Genres</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Release Year Range</label>
+                    <div class="range-inputs">
+                        <input type="number" id="year-start" placeholder="Min" min="1950" max="2026">
+                        <span class="range-divider">to</span>
+                        <input type="number" id="year-end" placeholder="Max" min="1950" max="2026">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="slider-header">
+                        <label for="rating-slider">Minimum Rating</label>
+                        <span id="rating-val">5.0</span>
+                    </div>
+                    <input type="range" id="rating-slider" min="0" max="10" step="0.5" value="5.0">
+                </div>
+                
+                <button class="btn btn-accent" id="apply-filters-btn">
+                    <i class="fa-solid fa-arrows-rotate"></i> Apply Filters
+                </button>
+                <button class="btn btn-outline" id="reset-filters-btn">
+                    Reset
+                </button>
+            </aside>
+
+            <!-- Recommendations / Main Display Panel -->
+            <section class="main-display">
+                
+                <!-- Recent Searches Tags -->
+                <div class="recent-searches-container" id="recent-searches-box">
+                    <span class="label-text">Recent Searches:</span>
+                    <div class="recent-tags-grid" id="recent-tags">
+                        <span class="no-recent">No recent searches</span>
+                    </div>
+                </div>
+
+                <!-- Recommendations Result Header -->
+                <div class="results-header hidden" id="recommendations-header">
+                    <h2>Similar to <span class="highlight" id="rec-source-title">Inception</span></h2>
+                    <span class="results-count" id="rec-results-count">10 movies found</span>
+                </div>
+
+                <!-- Recommendations Loader -->
+                <div class="loader-container hidden" id="main-loader">
+                    <div class="spinner"></div>
+                    <p>Analyzing genres, director styles, and plot matrices...</p>
+                </div>
+
+                <!-- Recommendations Card Grid -->
+                <div class="recommendations-grid" id="recommendations-container">
+                    <!-- Default message before searching -->
+                    <div class="empty-state" id="empty-results-state">
+                        <i class="fa-solid fa-clapperboard empty-icon"></i>
+                        <h3>Discover Your Next Favorite Film</h3>
+                        <p>Search for a movie or click <strong>Get Recommendations</strong> on the spotlight banner to run the AI engine.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Carousels Section -->
+        <section class="browse-carousels">
+            
+            <!-- Trending Carousel -->
+            <div class="carousel-section">
+                <div class="carousel-header">
+                    <h2><i class="fa-solid fa-arrow-trend-up icon-red"></i> Trending Now</h2>
+                </div>
+                <div class="movies-carousel-wrapper">
+                    <div class="movies-carousel" id="trending-carousel">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Popular Carousel -->
+            <div class="carousel-section">
+                <div class="carousel-header">
+                    <h2><i class="fa-solid fa-crown icon-gold"></i> Popular & Highly Rated</h2>
+                </div>
+                <div class="movies-carousel-wrapper">
+                    <div class="movies-carousel" id="popular-carousel">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Movie Details Modal -->
+    <div class="modal-overlay hidden" id="details-modal">
+        <div class="modal-container">
+            <button class="modal-close" id="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <div class="modal-backdrop-placeholder"></div>
+                <div class="modal-info-panel">
+                    <h2 class="modal-title" id="modal-movie-title">Inception</h2>
+                    <div class="modal-meta-line">
+                        <span class="modal-meta-item" id="modal-movie-year">2010</span>
+                        <span class="modal-meta-item pill rating" id="modal-movie-rating"><i class="fa-solid fa-star"></i> 8.8</span>
+                        <span class="modal-meta-item pill popularity" id="modal-movie-popularity"><i class="fa-solid fa-heart"></i> 95% Popular</span>
+                    </div>
+                    
+                    <div class="modal-genres" id="modal-movie-genres">
+                        <span>Sci-Fi</span>
+                        <span>Action</span>
+                        <span>Thriller</span>
+                    </div>
+                    
+                    <p class="modal-desc" id="modal-movie-desc">
+                        A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a CEO.
+                    </p>
+                    
+                    <div class="modal-crew-grid">
+                        <div class="crew-item">
+                            <span class="label">Director</span>
+                            <span class="value" id="modal-movie-director">Christopher Nolan</span>
+                        </div>
+                        <div class="crew-item">
+                            <span class="label">Starring</span>
+                            <span class="value" id="modal-movie-cast">Leonardo DiCaprio, Joseph Gordon-Levitt, Elliot Page</span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" id="modal-rec-btn">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Get Similar Recommendations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast Notification -->
+    <div class="toast-notification hidden" id="error-toast">
+        <i class="fa-solid fa-circle-exclamation toast-icon"></i>
+        <span class="toast-message" id="toast-message">Error loading recommendations.</span>
+    </div>
+
+    <!-- Page Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <p>&copy; 2026 FlixRecs Engine. Designed for academic validation.</p>
+            <div class="footer-links">
+                <span>Content-Based Filtering</span>
+                <span>TF-IDF Matrix</span>
+                <span>Cosine Similarity</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Frontend Javascript -->
+    <script src="/static/script.js"></script>
+</body>
+</html>
